@@ -28,6 +28,12 @@ class RabbitMQEventStream(
     private val mapper: ObjectMapper = ObjectMapperBuilder().build()
 
     init {
+        // DLQ
+        LOGGER.info("Setup DLQ")
+        channel.queueDeclare(queueDLQ, true, false, false, emptyMap())
+        channel.exchangeDeclare(topicDLQ, BuiltinExchangeType.DIRECT, true)
+        channel.queueBind(queueDLQ, topicDLQ, "")
+
         // Queue
         LOGGER.info("Setup queue: $queue")
         channel.queueDeclare(
@@ -53,12 +59,6 @@ class RabbitMQEventStream(
             BuiltinExchangeType.FANOUT,
             true /* durable */
         )
-
-        // DLQ
-        LOGGER.info("Setup DLQ")
-        channel.queueDeclare(queueDLQ, true, false, false, emptyMap())
-        channel.exchangeDeclare(topicDLQ, BuiltinExchangeType.DIRECT, true)
-        channel.queueBind(queueDLQ, topicDLQ, "")
     }
 
     override fun close() {
