@@ -24,15 +24,12 @@ class RabbitMQEventStream(
     private val queue: String = "${name}_queue_in"
     private val topic: String = toTopicName(name)
     private val queueDLQ: String = "${name}_queue_dlq"
-    private val topicDLQ: String = "${name}_topic_dlq"
     private val mapper: ObjectMapper = ObjectMapperBuilder().build()
 
     init {
         // DLQ
         LOGGER.info("Setup DLQ")
         channel.queueDeclare(queueDLQ, true, false, false, emptyMap())
-        channel.exchangeDeclare(topicDLQ, BuiltinExchangeType.DIRECT, true)
-        channel.queueBind(queueDLQ, topicDLQ, "")
 
         // Queue
         LOGGER.info("Setup queue: $queue")
@@ -42,8 +39,8 @@ class RabbitMQEventStream(
             false, /* exclusive */
             false, /* autoDelete */
             mapOf(
-                "x-dead-letter-exchange" to topicDLQ,
-                "x-dead-letter-routing-key" to ""
+                "x-dead-letter-exchange" to "",
+                "x-dead-letter-routing-key" to queueDLQ
             )
         )
         channel.basicConsume(

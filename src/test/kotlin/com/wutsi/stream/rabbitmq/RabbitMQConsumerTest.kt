@@ -3,9 +3,11 @@ package com.wutsi.stream.rabbitmq
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.Envelope
 import com.wutsi.stream.Event
@@ -89,7 +91,7 @@ internal class RabbitMQConsumerTest {
     }
 
     @Test
-    fun `ACK on delivery error`() {
+    fun `DLQ on malformed message`() {
         val body: String = """
             xxx
         """.trimIndent()
@@ -101,6 +103,28 @@ internal class RabbitMQConsumerTest {
             body.toByteArray(Charset.forName("utf-8"))
         )
 
-        verify(channel).basicAck(any(), any())
+        verify(channel).basicReject(567L, false)
+    }
+
+    @Test
+    fun `NACK when error while handling message`() {
+        val body: String = """
+            {
+              "id": "123",
+              "type": "Yo",
+              "payload": "Man"
+            }
+        """.trimIndent()
+
+        doThrow(RuntimeException::class).whenever(handler).onEvent(any())
+
+        consumer.handleDelivery(
+            "consumer-tag",
+            Envelope(567L, true, "foo", "bar"),
+            mock(),
+            body.toByteArray(Charset.forName("utf-8"))
+        )
+
+        verify(channel).basicReject(567L, true)
     }
 }

@@ -28,18 +28,16 @@ internal class RabbitMQEventStreamTest {
     fun `setup queues and topic on initialization`() {
         RabbitMQEventStream("foo", channel, handler)
 
+        verify(channel).queueDeclare("foo_queue_dlq", true, false, false, emptyMap())
+
         val params = argumentCaptor<Map<String, Any>>()
         verify(channel).queueDeclare(eq("foo_queue_in"), eq(true), eq(false), eq(false), params.capture())
-        assertEquals("foo_topic_dlq", params.firstValue["x-dead-letter-exchange"])
-        assertEquals("", params.firstValue["x-dead-letter-routing-key"])
+        assertEquals("", params.firstValue["x-dead-letter-exchange"])
+        assertEquals("foo_queue_dlq", params.firstValue["x-dead-letter-routing-key"])
 
         verify(channel).basicConsume(eq("foo_queue_in"), eq(false), any())
 
         verify(channel).exchangeDeclare("foo_topic_out", BuiltinExchangeType.FANOUT, true)
-
-        verify(channel).queueDeclare("foo_queue_dlq", true, false, false, emptyMap())
-        verify(channel).exchangeDeclare("foo_topic_dlq", BuiltinExchangeType.DIRECT, true)
-        verify(channel).queueBind("foo_queue_dlq", "foo_topic_dlq", "")
     }
 
     @Test
