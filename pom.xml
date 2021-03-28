@@ -6,7 +6,7 @@
 
   <artifactId>wutsi-stream-rabbitmq</artifactId>
   <groupId>com.wutsi</groupId>
-  <version>0.0.3</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
 
   <name>wutsi-stream-rabbitmq</name>
