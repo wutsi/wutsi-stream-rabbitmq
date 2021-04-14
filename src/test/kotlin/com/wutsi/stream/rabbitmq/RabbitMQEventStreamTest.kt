@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
@@ -35,9 +36,22 @@ internal class RabbitMQEventStreamTest {
         assertEquals("", params.firstValue["x-dead-letter-exchange"])
         assertEquals("foo_queue_dlq", params.firstValue["x-dead-letter-routing-key"])
 
-        verify(channel).basicConsume(eq("foo_queue_in"), eq(false), any())
-
         verify(channel).exchangeDeclare("foo_topic_out", BuiltinExchangeType.FANOUT, true)
+    }
+
+    @Test
+    fun `queue consumer is delayed`() {
+        RabbitMQEventStream("foo", channel, handler)
+
+        verify(channel, never()).basicConsume(eq("foo_queue_in"), eq(false), any())
+    }
+
+    @Test
+    fun `queue consumer is setup after a delay`() {
+        RabbitMQEventStream("foo", channel, handler, 5)
+
+        Thread.sleep(20000)
+        verify(channel).basicConsume(eq("foo_queue_in"), eq(false), any())
     }
 
     @Test

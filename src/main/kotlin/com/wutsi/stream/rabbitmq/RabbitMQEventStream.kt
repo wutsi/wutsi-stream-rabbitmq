@@ -10,12 +10,15 @@ import com.wutsi.stream.ObjectMapperBuilder
 import org.slf4j.LoggerFactory
 import java.nio.charset.Charset
 import java.time.OffsetDateTime
+import java.util.Timer
+import java.util.TimerTask
 import java.util.UUID
 
 class RabbitMQEventStream(
     private val name: String,
     private val channel: Channel,
-    private val handler: EventHandler
+    private val handler: EventHandler,
+    private val consumerSetupDelaySeconds: Long = 180
 ) : EventStream {
     companion object {
         private val LOGGER = LoggerFactory.getLogger(RabbitMQEventStream::class.java)
@@ -43,11 +46,7 @@ class RabbitMQEventStream(
                 "x-dead-letter-routing-key" to queueDLQ
             )
         )
-        channel.basicConsume(
-            queue,
-            false, /* auto-ack */
-            RabbitMQConsumer(handler, mapper, channel)
-        )
+        setupConsumer()
 
         // Topic
         LOGGER.info("Setup topic: $topic")
@@ -56,6 +55,27 @@ class RabbitMQEventStream(
             BuiltinExchangeType.FANOUT,
             true /* durable */
         )
+    }
+
+    private fun setupConsumer() {
+        /*
+        Wait before registering the consumer, so that the server is completely UP.
+        With Spring, this caused by bug because the consumer was registered during the startup,
+        then it dispatched the event using EventListener, but the event was lost because all the
+        event listener was not yet setup by spring!
+        */
+        LOGGER.info("Will setup queue consumer in $consumerSetupDelaySeconds seconds(s)")
+        val task = object : TimerTask() {
+            override fun run() {
+                LOGGER.info("Registering queue consumer")
+                channel.basicConsume(
+                    queue,
+                    false, /* auto-ack */
+                    RabbitMQConsumer(handler, mapper, channel)
+                )
+            }
+        }
+        Timer(queue, false).schedule(task, consumerSetupDelaySeconds * 1000)
     }
 
     override fun close() {

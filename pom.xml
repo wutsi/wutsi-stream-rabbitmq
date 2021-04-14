@@ -6,7 +6,7 @@
 
   <artifactId>wutsi-stream-rabbitmq</artifactId>
   <groupId>com.wutsi</groupId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <packaging>jar</packaging>
 
   <name>wutsi-stream-rabbitmq</name>
@@ -44,8 +44,8 @@
       <url>https://repo1.maven.org/maven2/</url>
     </repository>
     <repository>
-      <id>wutsi-stream-rabbitmq</id>
-      <url>https://maven.pkg.github.com/wutsi/wutsi-stream-rabbitmq</url>
+      <id>github</id>
+      <url>https://maven.pkg.github.com/wutsi/*</url>
     </repository>
   </repositories>
 
