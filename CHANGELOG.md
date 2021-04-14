@@ -1,6 +1,10 @@
 # See https://keepachangelog.com/en/1.0.0/
 
-## [1.1.0] 2021-03-27
+## [1.2.0] 2021-03-14
+### Changed
+- Do not log the payload of event pushed
+
+## [1.1.0] 2021-03-14
 ### Changed
 - Delay the registration of the queue consumer, to wait that the server is UP
 
