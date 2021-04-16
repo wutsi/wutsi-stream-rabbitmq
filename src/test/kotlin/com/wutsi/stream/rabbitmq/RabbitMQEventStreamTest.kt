@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.rabbitmq.client.AMQP
@@ -160,6 +161,32 @@ internal class RabbitMQEventStreamTest {
 
         verify(channel, never()).basicPublish(any(), any(), any(), any())
         verify(channel).basicReject(111, true)
+    }
+
+    @Test
+    fun `do not replay DLQ message more than once`() {
+        val body = "yo man".toByteArray()
+        val response1 = GetResponse(
+            Envelope(111, true, "xxx", "xxx"),
+            properties(retries = 3),
+            body,
+            1
+        )
+        val response2 = GetResponse(
+            Envelope(222, true, "xxx", "xxx"),
+            properties(retries = 3),
+            body,
+            1
+        )
+
+        doReturn(response1).doReturn(response2).doReturn(response1).doReturn(null).whenever(channel).basicGet(any(), any())
+
+        val stream = RabbitMQEventStream("foo", channel, handler)
+        stream.replayDlq()
+
+        verify(channel, times(2)).basicPublish(any(), any(), any(), any())
+        verify(channel).basicAck(111, false)
+        verify(channel).basicAck(222, false)
     }
 
     private fun properties(maxRetries: Int = 10, retries: Int = 1) = AMQP.BasicProperties().builder()

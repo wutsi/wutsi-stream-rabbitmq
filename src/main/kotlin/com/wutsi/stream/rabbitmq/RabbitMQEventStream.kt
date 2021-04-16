@@ -128,11 +128,23 @@ class RabbitMQEventStream(
 
     fun replayDlq() {
         LOGGER.info("Replaying DLQ")
+        val replayed = mutableSetOf<Long>()
+
         while (true) {
+            // Get the response
             val response = channel.basicGet(queueDLQ, false) ?: break
 
+            // Already replayed?
+            if (!replayed.add(response.envelope.deliveryTag))
+                break
+
+            // Too many retries?
             val retries = response.props.headers["x-retries"] as Int
-            if (retries < maxRetries) {
+            if (retries >= maxRetries) {
+                LOGGER.info("Too many retries - ${response.envelope.deliveryTag}")
+                channel.basicReject(response.envelope.deliveryTag, true) // Reject + Requeue
+            } else {
+                // Replay
                 channel.basicPublish(
                     "",
                     this.queue, /* routing-key */
@@ -140,9 +152,6 @@ class RabbitMQEventStream(
                     response.body
                 )
                 channel.basicAck(response.envelope.deliveryTag, false) // ACK
-            } else {
-                LOGGER.info("Too many retries - ${response.envelope.deliveryTag}")
-                channel.basicReject(response.envelope.deliveryTag, true) // Reject + Requeue
             }
         }
     }
