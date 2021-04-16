@@ -1,6 +1,7 @@
 package com.wutsi.stream.rabbitmq
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import com.wutsi.stream.Event
@@ -18,7 +19,9 @@ class RabbitMQEventStream(
     private val name: String,
     private val channel: Channel,
     private val handler: EventHandler,
-    private val consumerSetupDelaySeconds: Long = 180
+    private val consumerSetupDelaySeconds: Long = 180,
+    private val queueTtlSeconds: Long = 6 * 60 * 60, /* Queue TTL: 6 hours */
+    private val maxRetries: Int = 10
 ) : EventStream {
     companion object {
         private val LOGGER = LoggerFactory.getLogger(RabbitMQEventStream::class.java)
@@ -32,7 +35,13 @@ class RabbitMQEventStream(
     init {
         // DLQ
         LOGGER.info("Setup DLQ")
-        channel.queueDeclare(queueDLQ, true, false, false, emptyMap())
+        channel.queueDeclare(
+            queueDLQ,
+            true, /* durable */
+            false, /* exclusive */
+            false, /* autoDelete */
+            mapOf()
+        )
 
         // Queue
         LOGGER.info("Setup queue: $queue")
@@ -43,7 +52,8 @@ class RabbitMQEventStream(
             false, /* autoDelete */
             mapOf(
                 "x-dead-letter-exchange" to "",
-                "x-dead-letter-routing-key" to queueDLQ
+                "x-dead-letter-routing-key" to queueDLQ,
+                "x-message-ttl" to queueTtlSeconds * 1000
             )
         )
         setupConsumer()
@@ -88,8 +98,8 @@ class RabbitMQEventStream(
         val json: String = mapper.writeValueAsString(event)
         channel.basicPublish(
             "",
-            this.queue,
-            null, /* basic-properties */
+            this.queue, /* routing-key */
+            properties(), /* basic-properties */
             json.toByteArray(Charset.forName("utf-8"))
         )
     }
@@ -102,7 +112,7 @@ class RabbitMQEventStream(
         channel.basicPublish(
             this.topic,
             "", /* routing-key */
-            null, /* basic-properties */
+            properties(), /* basic-properties */
             json.toByteArray(Charset.forName("utf-8"))
         )
     }
@@ -115,6 +125,36 @@ class RabbitMQEventStream(
             ""
         )
     }
+
+    fun replayDlq() {
+        LOGGER.info("Replaying DLQ")
+        while (true) {
+            val response = channel.basicGet(queueDLQ, false) ?: break
+
+            val retries = response.props.headers["x-retries"] as Int
+            if (retries < maxRetries) {
+                channel.basicPublish(
+                    "",
+                    this.queue, /* routing-key */
+                    properties(retries + 1), /* basic-properties */
+                    response.body
+                )
+                channel.basicAck(response.envelope.deliveryTag, false) // ACK
+            } else {
+                LOGGER.info("Too many retries - ${response.envelope.deliveryTag}")
+                channel.basicReject(response.envelope.deliveryTag, true) // Reject + Requeue
+            }
+        }
+    }
+
+    private fun properties(retries: Int = 0) = AMQP.BasicProperties().builder()
+        .headers(
+            mapOf(
+                "x-max-retries" to maxRetries,
+                "x-retries" to retries
+            )
+        )
+        .build()
 
     private fun createEvent(type: String, payload: Any) = Event(
         id = UUID.randomUUID().toString(),

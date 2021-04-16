@@ -1,6 +1,5 @@
 package com.wutsi.stream.rabbitmq
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client.Channel
@@ -30,17 +29,11 @@ internal class RabbitMQConsumer(
             val event = mapper.readValue(body, Event::class.java)
             handler.onEvent(event)
             channel.basicAck(envelope.deliveryTag, false)
-        } catch (ex: JsonProcessingException) {
-            LOGGER.error("Malformed message - envelope=$envelope", ex)
-            channel.basicReject(
-                envelope.deliveryTag,
-                false /* requeue - message will go to DLQ */
-            )
         } catch (ex: Exception) {
-            LOGGER.error("Error while handling message - enveloppe=$envelope", ex)
+            LOGGER.error("Failed to handle the delivery - $consumerTag", ex)
             channel.basicReject(
                 envelope.deliveryTag,
-                true /* requeue  */
+                false /* do not requeue - message will go to DLQ */
             )
         }
     }

@@ -125,6 +125,6 @@ internal class RabbitMQConsumerTest {
             body.toByteArray(Charset.forName("utf-8"))
         )
 
-        verify(channel).basicReject(567L, true)
+        verify(channel).basicReject(567L, false)
     }
 }
