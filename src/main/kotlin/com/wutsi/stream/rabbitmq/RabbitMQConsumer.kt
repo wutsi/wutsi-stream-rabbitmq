@@ -24,7 +24,7 @@ internal class RabbitMQConsumer(
         properties: BasicProperties,
         body: ByteArray
     ) {
-        LOGGER.info("handleDelivery($consumerTag, $envelope,...)")
+        LOGGER.info("handleDelivery($consumerTag, $envelope,$properties...)")
         try {
             val event = mapper.readValue(body, Event::class.java)
             handler.onEvent(event)
