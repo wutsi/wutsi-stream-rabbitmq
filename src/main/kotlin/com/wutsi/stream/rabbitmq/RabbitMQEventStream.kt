@@ -133,15 +133,11 @@ class RabbitMQEventStream(
             // Get the response
             val response = channel.basicGet(queueDLQ, false) ?: break
 
-            // Already replayed?
-            if (!replayed.add(response.envelope.deliveryTag))
-                break
-
             // Too many retries?
             val retries = response.props.headers["x-retries"] as Int
             if (retries >= maxRetries) {
                 LOGGER.info("Too many retries - ${response.envelope.deliveryTag}")
-                channel.basicReject(response.envelope.deliveryTag, true) // Reject + Requeue
+                channel.basicReject(response.envelope.deliveryTag, false) // Reject + Drop
             } else {
                 // Replay
                 channel.basicPublish(
