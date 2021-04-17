@@ -52,8 +52,7 @@ class RabbitMQEventStream(
             false, /* autoDelete */
             mapOf(
                 "x-dead-letter-exchange" to "",
-                "x-dead-letter-routing-key" to queueDLQ,
-                "x-message-ttl" to queueTtlSeconds * 1000
+                "x-dead-letter-routing-key" to queueDLQ
             )
         )
         setupConsumer()
@@ -163,6 +162,7 @@ class RabbitMQEventStream(
                 "x-retries" to retries
             )
         )
+        .expiration((queueTtlSeconds * 1000).toString())
         .build()
 
     private fun createEvent(type: String, payload: Any) = Event(

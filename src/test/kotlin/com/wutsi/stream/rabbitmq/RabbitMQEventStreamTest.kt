@@ -37,8 +37,7 @@ internal class RabbitMQEventStreamTest {
         RabbitMQEventStream(
             name = "foo",
             channel = channel,
-            handler = handler,
-            queueTtlSeconds = 1111
+            handler = handler
         )
 
         verify(channel).queueDeclare("foo_queue_dlq", true, false, false, emptyMap())
@@ -47,7 +46,6 @@ internal class RabbitMQEventStreamTest {
         verify(channel).queueDeclare(eq("foo_queue_in"), eq(true), eq(false), eq(false), params.capture())
         assertEquals("", params.firstValue["x-dead-letter-exchange"])
         assertEquals("foo_queue_dlq", params.firstValue["x-dead-letter-routing-key"])
-        assertEquals(1111000L, params.firstValue["x-message-ttl"])
 
         verify(channel).exchangeDeclare("foo_topic_out", BuiltinExchangeType.FANOUT, true)
     }
@@ -69,7 +67,7 @@ internal class RabbitMQEventStreamTest {
 
     @Test
     fun `message enqueued are pushed to the queue`() {
-        val stream = RabbitMQEventStream("foo", channel, handler, maxRetries = 11)
+        val stream = RabbitMQEventStream("foo", channel, handler, maxRetries = 11, queueTtlSeconds = 111)
         stream.enqueue("foo", "bar")
 
         val json = argumentCaptor<ByteArray>()
@@ -86,11 +84,12 @@ internal class RabbitMQEventStreamTest {
         assertEquals("\"bar\"", event.payload)
         assertEquals(11, properties.firstValue.headers["x-max-retries"])
         assertEquals(0, properties.firstValue.headers["x-retries"])
+        assertEquals("111000", properties.firstValue.expiration)
     }
 
     @Test
     fun `message published are pushed to the topic`() {
-        val stream = RabbitMQEventStream("foo", channel, handler, maxRetries = 11)
+        val stream = RabbitMQEventStream("foo", channel, handler, maxRetries = 11, queueTtlSeconds = 111)
         stream.publish("foo", "bar")
 
         val json = argumentCaptor<ByteArray>()
@@ -107,6 +106,7 @@ internal class RabbitMQEventStreamTest {
         assertEquals("\"bar\"", event.payload)
         assertEquals(11, properties.firstValue.headers["x-max-retries"])
         assertEquals(0, properties.firstValue.headers["x-retries"])
+        assertEquals("111000", properties.firstValue.expiration)
     }
 
     @Test
