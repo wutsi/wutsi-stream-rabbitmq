@@ -6,7 +6,7 @@
 
   <artifactId>wutsi-stream-rabbitmq</artifactId>
   <groupId>com.wutsi</groupId>
-  <version>1.7.0</version>
+  <version>1.8.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>wutsi-stream-rabbitmq</name>
@@ -29,6 +29,10 @@
     <kotlin.code.style>official</kotlin.code.style>
     <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
   </properties>
+
+  <scm>
+    <developerConnection>scm:git:https://github.com/wutsi/wutsi-stream-rabbitmq.git</developerConnection>
+  </scm>
 
   <distributionManagement>
     <repository>
