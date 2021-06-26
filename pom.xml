@@ -4,7 +4,7 @@
 
   <artifactId>wutsi-stream-rabbitmq</artifactId>
   <groupId>com.wutsi</groupId>
-  <version>1.8.8</version>
+  <version>1.8.9-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>wutsi-stream-rabbitmq</name>
@@ -30,7 +30,7 @@
 
   <scm>
     <developerConnection>scm:git:https://github.com/wutsi/wutsi-stream-rabbitmq.git</developerConnection>
-    <tag>wutsi-stream-rabbitmq-1.8.8</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
