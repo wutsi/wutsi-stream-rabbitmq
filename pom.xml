@@ -15,7 +15,7 @@
     <jacoco.threshold.class>0.95</jacoco.threshold.class>
 
     <amqp-client.version>5.13.1</amqp-client.version>
-    <junit.version>5.7.2</junit.version>
+    <junit.version>5.8.0</junit.version>
     <klint.version>0.42.1</klint.version>
     <kotlin.version>1.5.30</kotlin.version>
     <kotlin-ktlint.version>0.38.1</kotlin-ktlint.version>
