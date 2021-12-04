@@ -16,7 +16,7 @@
 
     <amqp-client.version>5.14.0</amqp-client.version>
     <junit.version>5.8.2</junit.version>
-    <klint.version>0.43.0</klint.version>
+    <klint.version>0.43.2</klint.version>
     <kotlin.version>1.6.0</kotlin.version>
     <kotlin-ktlint.version>0.38.1</kotlin-ktlint.version>
     <kotlin-mockito.version>2.2.0</kotlin-mockito.version>
