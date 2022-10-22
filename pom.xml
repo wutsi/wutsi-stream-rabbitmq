@@ -20,7 +20,7 @@
     <kotlin.version>1.7.20</kotlin.version>
     <kotlin-ktlint.version>0.38.1</kotlin-ktlint.version>
     <kotlin-mockito.version>2.2.0</kotlin-mockito.version>
-    <spring-boot.version>2.7.4</spring-boot.version>
+    <spring-boot.version>2.7.5</spring-boot.version>
     <wutsi-stream.version>1.5.2</wutsi-stream.version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
